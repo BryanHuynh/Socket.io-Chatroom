@@ -11,7 +11,7 @@ window.onload = function (){
 
     messageForm.addEventListener('submit', e =>{
         e.preventDefault(); // prevents page reloading
-        if(!changeUsername(messageInput.value) && !changeColor(messageInput.value)){
+        if(!changeColor(messageInput.value) && !changeUsername(messageInput.value)){
             socket.emit('chat message', messageInput.value);
         }
         messageInput.value = '';
@@ -20,49 +20,22 @@ window.onload = function (){
     })
     function init(){
         socket.emit('init');
-        
     }
 
-    socket.on('default', e => {
-        console.log(e)
-        append('you have joined', e.user.color, e.time);
-        append('your default name is: ' + e.user.name, e.user.color, e.time);
-        color = e.color;
-        
-    })
+    socket.on('output', out =>{
+        append(out.msg, out.color);
+        scrollbar.scrollTop = 999999999;
+    });
+
 
     socket.on('users-list', e => {
         updateUserList(e)
         console.log(e);
     })
 
-    socket.on('new user', e =>{
-        append(e.user.name + ' has joined', e.user.color, e.time);
-        console.log(e);
-    });
-
-    socket.on('chat message', e =>{
-        append(e.user.name + ': ' +e.msg, e.user.color, e.time);
-        scrollbar.scrollTop = 999999999;
-        console.log(e);
-    });
-
-    socket.on('name change', e =>{
-        append(e.oldname + " is now " + e.user.name, e.user.color, e.time );
-        console.log(e);
-    });
-
-    socket.on('color change', e =>{
-        append(e.name + "'s new color is " + e.color, e.color, e.time);
-        console.log(e);
-    });
-
-    socket.on('dc', e => {
-        append(e.user.name + " has disconnected", e.user.color, e.time);
-    })
 
     function changeUsername(e){
-        const nicknameComp = '/nick'
+        const nicknameComp = '/nick '
         const message = e.slice(0, nicknameComp.length);
         if(nicknameComp == message){
             name = e.slice(nicknameComp.length, e.length);
@@ -76,7 +49,7 @@ window.onload = function (){
     }
 
     function changeColor(e){
-        const nicknameComp = '/nickcolor'
+        const nicknameComp = '/nickcolor '
         const message = e.slice(0, nicknameComp.length);
         if(nicknameComp == message){
             name = e.slice(nicknameComp.length, e.length);
@@ -92,11 +65,12 @@ window.onload = function (){
 
 
 
-    function append(msg, color, time){
+    function append(msg, color){
         const messageElement = document.createElement('li')
         messageElement.style.color = color;
-        messageElement.innerText = time + ": " + msg;
+        messageElement.innerText = msg;
         messageContainer.append( messageElement)
+ 
     }
 
     

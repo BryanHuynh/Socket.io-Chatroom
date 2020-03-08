@@ -21,34 +21,48 @@ function onConnect(socket){
     const color = getRandomColor();
     console.log(name, color);
     users[socket.id] = {name: name, color: color};
-    socket.emit('default', {user: users[socket.id], time: getDateTime()});
-    socket.broadcast.emit('new user', {user: users[socket.id], time: getDateTime()});
+    socket.emit('output', output('you have joined', color, false));
+    socket.emit('output', output('your default name is: ' + name, color, false));
+    socket.broadcast.emit('output', output(name + ' has joined', color));
     onlineListSend();
-    console.log({users: users[socket.id], time: getDateTime()});
   })
 
   socket.on('chat message', msg => {
-    io.emit('chat message', {user: users[socket.id], msg: msg, time: getDateTime()});
-    console.log({users: users[socket.id], time: getDateTime()});
-    
+    //io.emit('chat message', {user: users[socket.id], msg: msg, time: getDateTime()});
+    io.emit('output', output(msg, users[socket.id].color))
   })
+
+  function output(msg, color, saveFlag=true){
+    
+    let out = {msg: getDateTime() +" "+  users[socket.id].name  + ": " + msg, color: color};
+    //messages.push(out);
+    if(saveFlag){
+      save(out);
+    }
+    return out;
+  }
 
   socket.on('name change', name => {
     const oldname = users[socket.id].name;
     users[socket.id].name = name;
-    io.emit('name change', {oldname: oldname, user: users[socket.id], time: getDateTime()});
+    //io.emit('name change', {oldname: oldname, user: users[socket.id], time: getDateTime()});
+    //append(e.oldname + " is now " + e.user.name, e.user.color, e.time );
+    io.emit('output', output(oldname + " is now " + name, users[socket.id].color));
+
     onlineListSend();
   })
 
   socket.on('color change', color => {
     users[socket.id].color = "#"+color;
-    io.emit('color change', {user: users[socket.id], time: getDateTime()});
+    //io.emit('color change', {user: users[socket.id], time: getDateTime()});
+    //append(e.name + "'s new color is " + e.color, e.color, e.time);
+    io.emit('output', output(users[socket.id].name + "'s new color is " + color, color));
   })
 
   socket.on('disconnect', function(){
     try{
-      console.log(users[socket.id].name + ' has disconnected ')
-      socket.broadcast.emit('dc', {user: users[socket.id], time: getDateTime()});
+      //socket.broadcast.emit('dc', {user: users[socket.id], time: getDateTime()});
+      socket.broadcast.emit('output', output(users[socket.id].name + ' has disconnected ', users[socket.id].color));
       delete users[socket.id];
     }catch(e){
 
@@ -103,20 +117,20 @@ http.listen(3000, function(){
 });
 
 
-function save(){
+function save(e){
     // file system module to perform file operations
   const fs = require('fs');
   
   // stringify JSON Object
-  var jsonContent = JSON.stringify(users);
+  var jsonContent = JSON.stringify(e);
   console.log(jsonContent);
   
-  fs.writeFile("output.json", jsonContent, 'utf8', function (err) {
+  fs.appendFile("output.json", jsonContent + '\n', 'utf8', function (err) {
       if (err) {
-          console.log("An error occured while writing JSON Object to File.");
+          //console.log("An error occured while writing JSON Object to File.");
           return console.log(err);
       }
   
-      console.log("JSON file has been saved.");
+      //console.log("JSON file has been saved.");
   });
 }
