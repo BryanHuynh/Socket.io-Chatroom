@@ -10,6 +10,18 @@ html, body {
     margin: 0;
 }
 
+
+
+
+.grid-container {
+	min-height: 95%; 
+	display: grid;
+	grid-template-columns: 85% 15%;
+	grid-template-rows: ;
+	grid-template-areas: ". .";
+}
+
+
 #online-users-container{
 	background-color: grey;
 }
@@ -69,14 +81,19 @@ form button {
 #messages {
 	list-style-type: none;
 	margin: 0;
+	position: absolute;
+	max-height: 90vh;
+	bottom: 5px;
+	width: 80vw;
 }
+
+
+
 
 #messages li {
 	padding: 5px 10px;
 	font-weight: bold;
-	font-size: 32px;
-
-
+	font-size: 32px;	
 }
 
 #messages li:nth-child(odd) {
@@ -89,10 +106,9 @@ form button {
 	height: 94vh;
 	width: 100%;
 	background: #fff;
-	overflow-y: scroll;
+	overflow-y: auto;
 	word-wrap: break-word;
-
-
+	position: relative;
 	}
 
 	

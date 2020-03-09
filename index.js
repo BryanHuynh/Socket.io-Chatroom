@@ -1,14 +1,17 @@
-
-var express = require('express');
-var app = require('express')();
-var http = require('http').createServer(app);
-var io = require('socket.io')(http);
+// file system module to perform file operations
+const fs = require('fs');
+const cookieParser = require('cookie-parser');
+const express = require('express');
+const app = require('express')();
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
 app.use(express.static('public'))
-
+app.use(cookieParser());
 
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
 });
+
 
 const users = {};
 const messages = {};
@@ -16,26 +19,52 @@ const messages = {};
 io.on('connect', onConnect);
 
 function onConnect(socket){
+
+
+  socket.on('cookie', e =>{
+    if(nameAvailable(e.name)){
+      users[socket.id] = e;
+      //console.log('name open')
+      loggedOn(e);
+    }else{
+      //console.log('name closed')
+      users[socket.id] = e;
+      users[socket.id].name = makeid(7);
+      socket.emit('userInfo', users[socket.id]);
+      loggedOn(users[socket.id]);
+    }
+  })
+
+
+
   socket.on('init', e => {
     const name = makeid(7);
     const color = getRandomColor();
-    console.log(name, color);
     users[socket.id] = {name: name, color: color};
-    socket.emit('output', output('you have joined', color, false));
-    socket.emit('output', output('your default name is: ' + name, color, false));
-    socket.broadcast.emit('output', output(name + ' has joined', color));
-    onlineListSend();
+    socket.emit('userInfo', users[socket.id]);
+    loggedOn(users[socket.id])
   })
+
+  function loggedOn(e){
+    let file = JSON.parse(read());
+    socket.emit('output', output('you have joined', e.color, false));
+    socket.emit('output', output('your default name is: ' + e.name, e.color, false));
+    socket.broadcast.emit('output', output(e.name + ' has joined', e.color));
+    socket.emit('history', file);
+    onlineListSend();
+  }
 
   socket.on('chat message', msg => {
     //io.emit('chat message', {user: users[socket.id], msg: msg, time: getDateTime()});
     io.emit('output', output(msg, users[socket.id].color))
   })
 
-  function output(msg, color, saveFlag=true){
-    
+  function output(msg, color, saveFlag=true, stamp=true){
     let out = {msg: getDateTime() +" "+  users[socket.id].name  + ": " + msg, color: color};
     //messages.push(out);
+    if(stamp == false){
+      out = {msg: msg, color: '#000000'};
+    }
     if(saveFlag){
       save(out);
     }
@@ -44,25 +73,26 @@ function onConnect(socket){
 
   socket.on('name change', name => {
     const oldname = users[socket.id].name;
-    users[socket.id].name = name;
-    //io.emit('name change', {oldname: oldname, user: users[socket.id], time: getDateTime()});
-    //append(e.oldname + " is now " + e.user.name, e.user.color, e.time );
-    io.emit('output', output(oldname + " is now " + name, users[socket.id].color));
-
+    if(nameAvailable(name)){
+      users[socket.id].name = name;
+      io.emit('output', output(oldname + " is now " + name, users[socket.id].color));
+    }else{
+      socket.emit('output', output( name + ' in use', users[socket.id].color, false));
+    }
+    socket.emit('userInfo', users[socket.id])
     onlineListSend();
   })
 
   socket.on('color change', color => {
     users[socket.id].color = "#"+color;
-    //io.emit('color change', {user: users[socket.id], time: getDateTime()});
-    //append(e.name + "'s new color is " + e.color, e.color, e.time);
     io.emit('output', output(users[socket.id].name + "'s new color is " + color, color));
+    socket.emit('userInfo', users[socket.id])
+    onlineListSend();
   })
 
   socket.on('disconnect', function(){
     try{
-      //socket.broadcast.emit('dc', {user: users[socket.id], time: getDateTime()});
-      socket.broadcast.emit('output', output(users[socket.id].name + ' has disconnected ', users[socket.id].color));
+      socket.broadcast.emit('output', output(users[socket.id].name + ' has disconnected ', users[socket.id].color, true, false));
       delete users[socket.id];
     }catch(e){
 
@@ -97,6 +127,16 @@ function makeid(length) {
   return result;
 }
 
+function nameAvailable(name){
+  //console.log('name ', name);
+  for(let id in users){
+    //console.log('name check: ', users[id].name);
+    if(name == users[id].name){
+      return false;
+    }
+  }
+  return true;
+}
 
 function addZero(i) {
   if (i < 10) {
@@ -118,19 +158,24 @@ http.listen(3000, function(){
 
 
 function save(e){
-    // file system module to perform file operations
-  const fs = require('fs');
-  
   // stringify JSON Object
   var jsonContent = JSON.stringify(e);
-  console.log(jsonContent);
-  
-  fs.appendFile("output.json", jsonContent + '\n', 'utf8', function (err) {
+  let file = fs.readFileSync('output.json','utf8').slice(0,-2);
+  file += ', \n'+jsonContent + ']}';
+  fs.writeFile("output.json", file, 'utf8', function (err) {
       if (err) {
           //console.log("An error occured while writing JSON Object to File.");
           return console.log(err);
       }
-  
       //console.log("JSON file has been saved.");
   });
 }
+
+
+function read(){
+  let file = fs.readFileSync('output.json','utf8');
+  //console.log(file);
+  return file
+}
+
+

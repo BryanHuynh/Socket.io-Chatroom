@@ -11,26 +11,60 @@ window.onload = function (){
 
     messageForm.addEventListener('submit', e =>{
         e.preventDefault(); // prevents page reloading
-        if(!changeColor(messageInput.value) && !changeUsername(messageInput.value)){
-            socket.emit('chat message', messageInput.value);
+        if(isCommand(messageInput.value)){
+            if(!changeColor(messageInput.value) && !changeUsername(messageInput.value)){
+                append('usage: \n Name: /nick <name> \n Color: /nickcolor <#rrggbb>', '#000000');
+            }
+        }else{
+            socket.emit('chat message', messageInput.value)
         }
         messageInput.value = '';
         return false;
 
     })
     function init(){
-        socket.emit('init');
+        if(this.Cookies.get('name') != null && this.Cookies.get('color') != null){
+            socket.emit('cookie', {name: this.Cookies.get('name'), color: this.Cookies.get('color')})
+        }else{
+            socket.emit('init');
+        }
+
+
     }
 
-    socket.on('output', out =>{
-        append(out.msg, out.color);
-        scrollbar.scrollTop = 999999999;
+    function isCommand(msg){
+        if(msg.charAt(0) == '/'){
+            return true;
+        }
+        return false;
+    }
+
+
+
+    socket.on('userInfo', info =>{
+        this.Cookies.set('name', info.name);
+        this.Cookies.set('color', info.color);
     });
 
 
+    socket.on('output', out =>{
+        //console.log(out)
+        append(out.msg, out.color);
+        
+    });
+
+    socket.on('history', e => {
+        //console.log('history')
+        let msgs = e.msgs;
+        for(let i = 0; i < msgs.length; i++){
+            //console.log(msgs[i].msg, msgs[i].color)
+            append(msgs[i].msg, msgs[i].color);
+        }
+    })
+
     socket.on('users-list', e => {
         updateUserList(e)
-        console.log(e);
+        //console.log(e);
     })
 
 
@@ -38,9 +72,10 @@ window.onload = function (){
         const nicknameComp = '/nick '
         const message = e.slice(0, nicknameComp.length);
         if(nicknameComp == message){
-            name = e.slice(nicknameComp.length, e.length);
+            name = e.slice(nicknameComp.length , e.length);
             if(name == ''){
-                return true;
+                append('usage: /nick <name>', '#000000');
+                return false;
             }else{
                 socket.emit('name change', name );
                 return true;
@@ -52,14 +87,31 @@ window.onload = function (){
         const nicknameComp = '/nickcolor '
         const message = e.slice(0, nicknameComp.length);
         if(nicknameComp == message){
-            name = e.slice(nicknameComp.length, e.length);
-            if(name == ''){
-                return true;
+            color = e.slice(nicknameComp.length, e.length);
+            if(color == ''){
+                append('usage: /nickcolor <#rrggbb>', '#000000');
+                return false;
             }else{
-                socket.emit('color change', name );
-                return true;
+                if(isColor(color)){
+                    socket.emit('color change', color);
+                    return true;
+                }else{
+                    append(color + ' is not a valid hex color ', '#000000');
+                    return false
+                }
+
             }
 
+        }
+    }
+    function isColor(h) {
+        var re = /[0-9A-Fa-f]{6}/g;
+        if(re.test(h)) {
+            //alert('valid hex');
+            return true;
+        } else {
+            //alert('invalid');
+            return false;
         }
     }
 
@@ -70,7 +122,7 @@ window.onload = function (){
         messageElement.style.color = color;
         messageElement.innerText = msg;
         messageContainer.append( messageElement)
- 
+        scrollbar.scrollTop = 999999999;
     }
 
     

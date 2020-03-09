@@ -1,7 +1,7 @@
 {
   "name": "assignment3",
   "version": "1.0.0",
-  "description": "",
+  "description": "��#\u0000 \u0000S\u0000e\u0000n\u0000g\u00005\u00001\u00003\u0000-\u0000A\u0000s\u0000s\u0000i\u0000g\u0000n\u0000m\u0000e\u0000n\u0000t\u00003\u0000\r\u0000 \u0000",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,7 +9,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cookie-parser": "^1.4.4",
     "express": "^4.17.1",
+    "js-cookie": "^2.2.1",
+    "poppers": "^0.1.2",
     "socket.io": "^2.3.0"
-  }
+  },
+  "devDependencies": {}
 }
