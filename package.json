@@ -15,5 +15,11 @@
     "poppers": "^0.1.2",
     "socket.io": "^2.3.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+  
 }

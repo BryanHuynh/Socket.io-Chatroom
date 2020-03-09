@@ -47,9 +47,9 @@ function onConnect(socket){
 
   function loggedOn(e){
     let file = JSON.parse(read());
-    socket.emit('output', output('you have joined', e.color, false));
-    socket.emit('output', output('your default name is: ' + e.name, e.color, false));
-    socket.broadcast.emit('output', output(e.name + ' has joined', e.color));
+    socket.emit('output', output('you have joined', e.color, false, false));
+    socket.emit('output', output('your default name is: ' + e.name, e.color, false, false));
+    socket.broadcast.emit('output', output(e.name + ' has joined', e.color, true, false));
     socket.emit('history', file);
     onlineListSend();
   }
@@ -63,7 +63,7 @@ function onConnect(socket){
     let out = {msg: getDateTime() +" "+  users[socket.id].name  + ": " + msg, color: color};
     //messages.push(out);
     if(stamp == false){
-      out = {msg: msg, color: '#000000'};
+      out = {msg:  getDateTime() +": "+ msg, color: '#000000'};
     }
     if(saveFlag){
       save(out);
@@ -94,6 +94,7 @@ function onConnect(socket){
     try{
       socket.broadcast.emit('output', output(users[socket.id].name + ' has disconnected ', users[socket.id].color, true, false));
       delete users[socket.id];
+      onlineListSend();
     }catch(e){
 
     }
@@ -147,14 +148,12 @@ function addZero(i) {
 
 function getDateTime(){
   const d = new Date();
-  const h = addZero(d.getHours());
+  const h = d.getHours();
   var m = addZero(d.getMinutes());
   return h + ":" + m;
 }
 
-http.listen(3000, function(){
-  console.log('listening on *:3000');
-});
+http.listen(process.env.PORT || 5000);
 
 
 function save(e){
