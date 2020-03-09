@@ -63,7 +63,7 @@ function onConnect(socket){
     let out = {msg: getDateTime() +" "+  users[socket.id].name  + ": " + msg, color: color};
     //messages.push(out);
     if(stamp == false){
-      out = {msg:  getDateTime() +": "+ msg, color: '#000000'};
+      out = {msg: getDateTime() +": "+ msg, color: color};
     }
     if(saveFlag){
       save(out);
@@ -84,8 +84,9 @@ function onConnect(socket){
   })
 
   socket.on('color change', color => {
-    users[socket.id].color = "#"+color;
-    io.emit('output', output(users[socket.id].name + "'s new color is " + color, color));
+    users[socket.id].color = color;
+    console.log(users[socket.id].color);
+    io.emit('output', output(users[socket.id].name + "'s new color is " + color, color, true, false));
     socket.emit('userInfo', users[socket.id])
     onlineListSend();
   })
